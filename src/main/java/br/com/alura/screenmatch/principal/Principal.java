@@ -1,5 +1,7 @@
 package br.com.alura.screenmatch.principal;
 
+import br.com.alura.screenmatch.dto.SerieCleanDTO;
+import br.com.alura.screenmatch.model.Categoria;
 import br.com.alura.screenmatch.model.DadosSerie;
 import br.com.alura.screenmatch.model.DadosTemporada;
 import br.com.alura.screenmatch.model.Episodio;
@@ -15,6 +17,8 @@ import java.util.Optional;
 import java.util.Scanner;
 import java.util.stream.Collectors;
 
+import org.modelmapper.ModelMapper;
+
 public class Principal {
 
     private Scanner leitura = new Scanner(System.in);
@@ -22,7 +26,7 @@ public class Principal {
     private ConverteDados conversor = new ConverteDados();
     private final String ENDERECO = "https://www.omdbapi.com/?t=";
     private final String API_KEY = "&apikey=6585022c";
-    private List<DadosSerie> dadosSeries = new ArrayList<>();
+    ModelMapper modelMapper = new ModelMapper();
 
     private SerieRepository repositorio;
     private List<Serie> series = new ArrayList<>();
@@ -40,6 +44,9 @@ public class Principal {
                     3 - Listar séries buscadas
                     4 - Buscar series pelo nome
                     5- Buscar series por ator
+                    6 - Buscar top 5 series
+                    7- Buscar series pela categoria, dinamismo
+                    8- buscar pelo numero maximo de temporadas e avaliacao
 
                     0 - Sair
                     """;
@@ -65,6 +72,15 @@ public class Principal {
 
                 case 5:
                     buscarSeriesPorAtor();
+                    break;
+                case 6:
+                    buscarTop5();
+                    break;
+                case 7:
+                    buscarSeriesPorCategoria();
+                    break;
+                case 8:
+                    buscarSeriesPorTempEAvaliacao();
                     break;
                 case 0:
                     System.out.println("Saindo...");
@@ -153,6 +169,32 @@ public class Principal {
         } else {
             System.out.println("Série não encontrada!");
         }
+    }
+
+    private void buscarTop5() {
+        List<Serie> top5 = repositorio.findTop5ByOrderByAvaliacaoDesc();
+        List<SerieCleanDTO> top5Clean = top5.stream().map(s -> modelMapper.map(s, SerieCleanDTO.class)).toList();
+        top5Clean.forEach(sc -> System.out.println("Series buscadas: " + sc));
+    }
+
+    private void buscarSeriesPorCategoria() { // ajuste
+        System.out.println("Deseja buscar séries de que categoria/gênero? ");
+        var nomeGenero = leitura.nextLine();
+        Categoria categoria = Categoria.fromPortugues(nomeGenero);
+        List<Serie> seriesPorCategoria = repositorio.findByGenero(categoria);
+        System.out.println("Séries da categoria " + nomeGenero);
+        seriesPorCategoria.forEach(System.out::println);
+    }
+
+    private void buscarSeriesPorTempEAvaliacao() {
+        System.out.println("Informe o numero maximo de temporadas: ");
+        Integer temporadasMax = leitura.nextInt();
+        System.out.println("Informa agora a avaliação minima, ex: 8,0");
+        Double AvaliacaoMin = leitura.nextDouble();
+
+        List<Serie> seriesFiltradas = repositorio
+                .findByTotalTemporadasLessThanEqualAndAvaliacaoGreaterThanEqual(temporadasMax, AvaliacaoMin);
+        seriesFiltradas.forEach(s -> System.out.println(s));
     }
 
 }
