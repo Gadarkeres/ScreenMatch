@@ -27,7 +27,7 @@ public class Principal {
     private final String ENDERECO = "https://www.omdbapi.com/?t=";
     private final String API_KEY = "&apikey=6585022c";
     ModelMapper modelMapper = new ModelMapper();
-
+    private Optional<Serie> serieBusca;
     private SerieRepository repositorio;
     private List<Serie> series = new ArrayList<>();
 
@@ -47,6 +47,8 @@ public class Principal {
                     6 - Buscar top 5 series
                     7- Buscar series pela categoria, dinamismo
                     8- buscar pelo numero maximo de temporadas e avaliacao
+                    9- Buscar episodio por trecho
+                    10- Top episódios Por Serie
 
                     0 - Sair
                     """;
@@ -81,6 +83,12 @@ public class Principal {
                     break;
                 case 8:
                     buscarSeriesPorTempEAvaliacao();
+                    break;
+                case 9:
+                    buscarEpisodioPorTrecho();
+                    break;
+                case 10:
+                    topEpisodiosPorSerie();
                     break;
                 case 0:
                     System.out.println("Saindo...");
@@ -155,6 +163,8 @@ public class Principal {
         } else {
             System.out.println("Série não encontrada!");
         }
+
+        serieBusca = serie;
     }
 
     private void buscarSeriesPorAtor() {
@@ -192,9 +202,29 @@ public class Principal {
         System.out.println("Informa agora a avaliação minima, ex: 8,0");
         Double AvaliacaoMin = leitura.nextDouble();
 
-        List<Serie> seriesFiltradas = repositorio
-                .findByTotalTemporadasLessThanEqualAndAvaliacaoGreaterThanEqual(temporadasMax, AvaliacaoMin);
+        // List<Serie> seriesFiltradas = repositorio
+        // .findByTotalTemporadasLessThanEqualAndAvaliacaoGreaterThanEqual(temporadasMax,
+        // AvaliacaoMin);
+        List<Serie> seriesFiltradas = repositorio.seriePorTemporadaEAvaliacao(temporadasMax, AvaliacaoMin);
         seriesFiltradas.forEach(s -> System.out.println(s));
+    }
+
+    private void buscarEpisodioPorTrecho() {
+        System.out.println("Qual nome do eposido?");
+        String techoEpisodio = leitura.nextLine();
+        List<Episodio> episodiosEncontrados = repositorio.episodiosPorTrecho(techoEpisodio);
+        episodiosEncontrados.forEach(System.out::println);
+    }
+
+    private void topEpisodiosPorSerie() {
+        buscarSeriesPeloTitulo();
+        if (serieBusca.isEmpty())
+            return;
+        Serie serie = serieBusca.get();
+
+        List<Episodio> topEpisodios = repositorio.topEpisodiosPorSerie(serie).stream().limit(5)
+                .collect(Collectors.toList());
+        topEpisodios.forEach(System.out::println);
     }
 
 }
